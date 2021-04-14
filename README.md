@@ -6,9 +6,33 @@ Just download the code, and run the test files - feel free to take a look at how
 
 Basic examples:
 
-## A window with two widgets
+## A window with two stretching widgets in a row
 ```python
-print("hey?")
+import PygameUi
+Window = PygameUi.Window
+Widget = PygameUi.Widget
+Layout = PygameUi.Layout
+
+# initialise a main window,
+# and set its size to 300x200
+main_window = Window()
+main_window.set_size((300,200),)
+
+# set the layout to be a row,
+# and use Layout.FIT to specify
+# that child elements should be
+# stretched to fit the space
+window_layout = Layout(Layout.ROW, Layout.FIT)
+main_window.set_layout(window_layout)
+
+child_left = Widget()
+child_left.set_fluid_size(1,1)
+
+child_right = Widget()
+child_right.set_fluid_size(1,1)
+
+main_window.add_children([child_left,
+                          child_right])
 ```
 
 # extra-notes
