@@ -25,6 +25,13 @@ main_window.set_size((300,200),)
 window_layout = Layout(Layout.ROW, Layout.FIT)
 main_window.set_layout(window_layout)
 
+# create a widget for the left
+# and right side, and set them
+# both to be fluid, and take up
+# the same amount of space
+# experiment with changing child_left's
+# first value in .set_fluid_size()
+# and see how that affects it!
 child_left = Widget()
 child_left.set_fluid_size(1,1)
 
