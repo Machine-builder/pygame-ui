@@ -29,14 +29,15 @@ main_window.set_layout(window_layout)
 # and right side, and set them
 # both to be fluid, and take up
 # the same amount of space
-# experiment with changing child_left's
-# first value in .set_fluid_size()
-# and see how that affects it!
 child_left = Widget()
 child_left.set_fluid_size(1,1)
 
 child_right = Widget()
 child_right.set_fluid_size(1,1)
+
+# experiment with changing child_left's
+# first value in .set_fluid_size()
+# and see how that affects it!
 
 main_window.add_children([child_left,
                           child_right])
