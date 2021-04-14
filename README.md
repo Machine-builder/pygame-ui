@@ -43,6 +43,14 @@ child_right.set_fluid_size(1,1)
 
 main_window.add_children([child_left,
                           child_right])
+
+# this is NOT all the code required-
+# you also need your basic pygame loop
+# and event management. If you're not
+# sure how that would be setup, I
+# recommend you look into some of the
+# test files to get a rough idea
+
 ```
 
 # extra-notes
