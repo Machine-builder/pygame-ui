@@ -23,8 +23,8 @@ display = pygame.display.set_mode([640,480])
 
 window = Window()
 
-window_w = 400
-window_h = 250
+window_w = 273
+window_h = 200
 
 window.set_size((window_w,window_h),)
 window.x = 20
@@ -32,14 +32,26 @@ window.y = 20
 
 window.set_style(WidgetStyle(border=(2,(255,255,255)), border_radius=2))
 
+window.set_layout(Layout(Layout.COL, Layout.FIT))
+
 font = pygame.font.Font('font.ttf', 16)
 
-inner_child_1 = Label(None, font, "This is a label")
-inner_child_1.set_style( WidgetStyle(border=(1,(0,0,0)), border_radius=2) )
-inner_child_1.set_fluid_size(1,1)
-inner_child_1.margin = 1
+boring_label = Label(None, font, "This is a label")
+boring_label.set_style( WidgetStyle(border=(1,(0,0,0)), border_radius=2) )
+boring_label.set_fluid_size(1,1)
+boring_label.margin = 1
+window.add_child(boring_label)
 
-window.add_child(inner_child_1)
+cool_button = Label(None, font, "This one is a button! - say Hi")
+cool_button.set_style( WidgetStyle(background=(240,240,240), border=(1,(0,0,0)), border_radius=2) )
+cool_button.set_fluid_size(0,0)
+cool_button.size = (cool_button.image_size[0]+6,cool_button.image_size[1]+4)
+cool_button.margin = (30,5)
+window.add_child(cool_button)
+
+def print_test(): print("Hi")
+cool_button.on_click = print_test
+
 
 
 # main loop ---------------------------------------------------------------- #

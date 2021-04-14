@@ -26,8 +26,9 @@ padding support:
 
 
 import pygame
-from . import layout
-Layout = layout.Layout
+
+from . import WidgetTypes
+from . import Layout
 
 import copy
 import math
@@ -94,8 +95,12 @@ class Widget():
 
         self._children = []
 
-        self.set_layout(layout.Layout())
+        self.set_layout(Layout())
         self.minimum_size = self.get_minimum_size()
+
+        self._on_click = None
+
+        self.type = WidgetTypes.WIDGET
     
     def copy(self):
         return copy.deepcopy(self)
@@ -183,8 +188,8 @@ class Widget():
         rw = self.w+self.margin[1]+self.margin[3]
         rh = self.h+self.margin[0]+self.margin[2]
         return (
-            int(self.scrn_x + rw/2),
-            int(self.scrn_y + rh/2)
+            int(self.scrn_x + rw/2 - self.margin[1]),
+            int(self.scrn_y + rh/2 - self.margin[0])
         )
 
     @w.setter
@@ -231,17 +236,24 @@ class Widget():
         """the rect attribute of the widget,
         in screen coordinates"""
         margin = self.margin
-        return (self.scrn_x+margin[1],
-                self.scrn_y+margin[0],
-                self.w-margin[3]-margin[1],
-                self.h-margin[2]-margin[0])
+        return (self.scrn_x+margin[1], self.scrn_y+margin[0],
+                self.w-margin[3]-margin[1], self.h-margin[2]-margin[0])
+    
+    @property
+    def borders(self):
+        mt, ml, mb, mr = self.margin
+        scrn_x, scrn_y = self.scrn_x+ml, self.scrn_y+mt
+        return scrn_x, scrn_y, scrn_x+self.w-ml-mr, scrn_y+self.h-mt-mb
+    
+    def loc_within_borders(self, loc):
+        x,y,mx,my = self.borders
+        lx,ly = loc
+        return lx>x and lx<mx and ly>y and ly<my
     
     def ensure_positive_margin(self):
         self.wlayout.margin = (
-            max(self.wlayout.margin[0],0),
-            max(self.wlayout.margin[1],0),
-            max(self.wlayout.margin[2],0),
-            max(self.wlayout.margin[3],0)
+            max(self.wlayout.margin[0],0), max(self.wlayout.margin[1],0),
+            max(self.wlayout.margin[2],0), max(self.wlayout.margin[3],0)
         )
     
     @property
@@ -253,10 +265,8 @@ class Widget():
             if len(margin) == 4:
                 self.wlayout.margin = margin
             elif len(margin) == 2:
-                self.wlayout.margin = (margin[1],
-                                       margin[0],
-                                       margin[1],
-                                       margin[0])
+                self.wlayout.margin = (margin[1], margin[0],
+                                       margin[1], margin[0])
         elif type(margin) == int:
             self.wlayout.margin = (margin,margin,margin,margin)
         self.ensure_positive_margin()
@@ -271,18 +281,15 @@ class Widget():
         self._loc = loc
     def set_style(self, style):
         self._style = style
-    def set_layout(self, layout:layout.Layout):
+    def set_layout(self, layout:Layout):
         """set a layout for the widget's children to follow"""
         self._layout = layout
         self.reposition_children()
     
-    def draw_after(self, surface):
-        """function intended to be overwritten"""
-    
     def draw(self, surface):
         """draw the widget onto the surface"""
         self._style.draw(surface, self.rect)
-        self.draw_after(surface)
+        self.ovr_draw(surface)
         for child in self._children:
             child.draw(surface)
     
@@ -300,15 +307,36 @@ class Widget():
     def set_minimum_size(self, w, h):
         self._min_size = (w,h)
     
+    def ovr_draw(self, surface):
+        """function intended to be overwritten"""
+    
+    @property
+    def on_click(self): return self._on_click
+    @on_click.setter
+    def on_click(self, function):
+        """set a widget's on_click attribute to a function"""
+        if function:
+            self.type = WidgetTypes.BUTTON
+        self._on_click = function
+    
+    def all_children(self):
+        """return a list of all children (deep search)"""
+        children = []
+        for child in self._children:
+            children.append(child)
+            if len(child._children)>0:
+                children.extend(child.all_children())
+        return children
+    
+    def filter_children(self, filter_function):
+        """return a list of all children that match the filter"""
+        matches = filter(filter_function,
+                         [child for child in self.all_children()])
+        return matches
+
     def get_minimum_size(self, debug=False, indent=0):
         """returns the minimum size of the widget,
-        taking all children widgets into account
-        
-        currently slightly broken, will fix soon
-        
-        it returns only just too small of a size
-        possibly missing out on adding a margin
-        somewhere or something, not entirely sure"""
+        taking all children widgets into account"""
 
         # set the min_size to the widget's padding & margin
         min_size = [
@@ -339,6 +367,10 @@ class Widget():
                     i0, i1 = 0, 1
                 elif layout.direction == Layout.COL:
                     i0, i1 = 1, 0
+                
+                # flip the axis being calculated
+                # depending on whether the child widgets
+                # are on a row or column
 
                 largest = 0
                 child_sizes = []
@@ -356,7 +388,7 @@ class Widget():
                 child_sizes.sort(key=lambda i: i[0], reverse=True)
                 largest_v = child_sizes[0][0]
 
-                for v,w in child_sizes:
+                for _,w in child_sizes:
                     min_size[i0] += largest_v*w
 
                 min_size[i1] += largest

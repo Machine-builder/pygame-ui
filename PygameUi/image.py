@@ -1,10 +1,12 @@
 import pygame
-from .widget import Widget
+from . import WidgetTypes
+from . import Widget
 
 class ImageWidget(Widget):
     def __init__(self, parent=None, image:pygame.Surface=None):
         super().__init__(parent)
         self.set_image(image)
+        self.type = WidgetTypes.IMAGE
     
     def set_image(self, image):
         """set the widget's image"""
@@ -14,9 +16,10 @@ class ImageWidget(Widget):
                                 int(self.image_size[1]/2))
         self.set_minimum_size(*self.image.get_size())
     
-    def draw_after(self, surface):
+    def ovr_draw(self, surface):
         """draw the image widget"""
         center = self.center
         image_pos = (center[0]-self.image_size_half[0],
                      center[1]-self.image_size_half[1])
         surface.blit(self.image, image_pos)
+        # pygame.draw.circle(surface, (100,255,100), center, 7, 2)
