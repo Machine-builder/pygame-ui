@@ -22,6 +22,7 @@ main_window.set_size((300,200),)
 # and use Layout.FIT to specify
 # that child elements should be
 # stretched to fit the space
+
 window_layout = Layout(Layout.ROW, Layout.FIT)
 main_window.set_layout(window_layout)
 
@@ -29,6 +30,7 @@ main_window.set_layout(window_layout)
 # and right side, and set them
 # both to be fluid, and take up
 # the same amount of space
+
 child_left = Widget()
 child_left.set_fluid_size(1,1)
 
