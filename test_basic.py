@@ -3,11 +3,16 @@
 import PygameUi
 pygame = PygameUi.pygame
 
+Tags = PygameUi.widget_tags.Tags
 Window = PygameUi.Window
 
 Widget = PygameUi.Widget
+Container = PygameUi.Container
+
 WidgetLayout = PygameUi.WidgetLayout
 WidgetStyle = PygameUi.WidgetStyle
+ImageWidget = PygameUi.ImageWidget
+Label = PygameUi.Label
 
 Layout = PygameUi.Layout
 
@@ -39,15 +44,15 @@ inner_child_2.set_style( WidgetStyle(border=(1,(0,0,0)), border_radius=2) )
 inner_child_2.set_fluid_size(1,1)
 inner_child_2.style.background = (200,255,200)
 
-col_child = Widget(window)
+col_child = Container(window)
 col_child.set_style( WidgetStyle(border=(1,(0,0,0)), border_radius=2) )
 col_child.set_fluid_size(1.5,1)
 col_child.style.background = (200,200,255)
-col_child.set_layout(Layout(Layout.COL, Layout.FIT))
+col_child.set_layout(Layout(Tags.COL, Tags.FIT))
 col_child.margin = 5
 
 for i in range(4):
-    list_elem = Widget(col_child)
+    list_elem = Container(col_child)
     widget_colour = (225,225,225)
     if i%2 == 0:
         widget_colour = (180,180,180)
