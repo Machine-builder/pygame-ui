@@ -81,7 +81,9 @@ extra_widget.margin = 3
 extra_widget.style.background = (190,190,230)
 extra_widget.style.border_thickness = 3
 extra_widget.style.border_radius = 2
+
 container_3.child_at(2).add_child(extra_widget)
+container_3.align_fluid_children()
 
 window.add_child(container_1)
 window.add_child(container_2)
@@ -104,7 +106,6 @@ while run:
                 print(window.get_minimum_size(True))
             elif event.key == pygame.K_r:
                 window_w, window_h = window.get_minimum_size()
-                print(cool_button.size)
     
     window.process_events(pygame_events)
     
