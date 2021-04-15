@@ -1,6 +1,10 @@
 # pygame-ui
 My attempt at creating a fluid ui library built for pygame
 
+This project is current VERY EARLY in development,
+so there are probably loads of bugs that you'll experience when messing about with it,
+so feel free to open an issue or create a PR and fix the bug yourself :)
+
 # how-to-use
 Just download the code, and run the test files - feel free to take a look at how they work!
 
