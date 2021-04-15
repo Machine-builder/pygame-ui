@@ -13,6 +13,7 @@ Just download the repo, extract it, and run the test files! - Feel free to look 
 **Good Practice**: `test_complex.py` is the most recent of the `test_*.py` files, and it is therefor written the most efficiently and pythonic. I recommend you take a look through it so you can plan out how to setup your own interfaces.
 
 Here's what you _should_ see when you run `test_complex.py`, you can use the WASD keys to resize the Window Widget
+
 ![a gif of test_complex.py in action](https://raw.githubusercontent.com/Machine-builder/pygame-ui/main/Gifs/test_complex.gif)
 
 ### Further Code Examples
