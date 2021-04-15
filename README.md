@@ -1,5 +1,5 @@
 # pygame-ui
-# introduction & overview
+# Introduction & Overview
 
 Here's my attempt at creating a fluid **User Interface** library built for **pygame 2+**
 
@@ -60,8 +60,8 @@ main_window.add_children([child_left,
 # test files to get a rough idea
 ```
 
-## extra notes
+## Extra Notes
 This code is awful, I'm aware.. haha
 
-## license
+## License
 Please make sure to read the COPYING file before deciding to release your own versions of my code, also feel free to add a PR to change anything or fix anything up
