@@ -6,5 +6,5 @@ class Container(widget.Widget):
 
     built off Widget class"""
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)

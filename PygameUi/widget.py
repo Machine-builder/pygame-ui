@@ -145,6 +145,29 @@ class Widget():
         """set a widget's fixed size, useful for in fluid widgets
         when you want to keep them a constant size"""
         self._fixed_size = (fixed, size, min_margin)
+    
+    @property
+    def fluid_size(self): return self.wlayout.stretch_value
+    @fluid_size.setter
+    def fluid_size(self, stretch_value):
+        self.set_fluid_size(*stretch_value)
+
+    def set_fluid_size(self,x=1,y=1):
+        """sets how a widget should act in a parent widget
+        
+        x & y should both be either floats or ints,
+        and x is the "weight" of this widget if it's in a row,
+        and y is the "weight" of this widget if it's in a column.
+        
+        weights of a widget basically allow it to take up
+        more space in organisation"""
+        sx = bool(x)
+        sy = bool(y)
+        self.wlayout.stretch = (sx,sy)
+        self.wlayout.stretch_value = (
+            x if sx else 1,
+            y if sy else 1
+        )
 
     @property
     def loc(self): return self._loc
@@ -238,29 +261,6 @@ class Widget():
     def scrn_y(self):
         if not self._parent: return self.y
         return self.y+self._parent.scrn_y
-    
-    @property
-    def fluid_size(self): return self.wlayout.stretch_value
-    @fluid_size.setter
-    def fluid_size(self, stretch_value):
-        self.set_fluid_size(*stretch_value)
-
-    def set_fluid_size(self,x=1,y=1):
-        """sets how a widget should act in a parent widget
-        
-        x & y should both be either floats or ints,
-        and x is the "weight" of this widget if it's in a row,
-        and y is the "weight" of this widget if it's in a column.
-        
-        weights of a widget basically allow it to take up
-        more space in organisation"""
-        sx = bool(x)
-        sy = bool(y)
-        self.wlayout.stretch = (sx,sy)
-        self.wlayout.stretch_value = (
-            x if sx else 1,
-            y if sy else 1
-        )
 
     @property
     def rect(self):
@@ -384,6 +384,9 @@ class Widget():
             self.min_h
         ]
 
+        if debug:
+            print(' '*indent, self.name)
+
         fixed_size = self.fixed_size
         if fixed_size[0]:
             size, margins = fixed_size[1], fixed_size[2]
@@ -411,6 +414,9 @@ class Widget():
         # if this widget has children, add up their sizes
         if len(self._children) > 0:
 
+            if debug:
+                print(' '*indent, '.. has children', len(self._children))
+
             if layout.size == Tags.FIT:
                 if layout.direction == Tags.ROW:
                     i0, i1 = 0, 1
@@ -432,7 +438,7 @@ class Widget():
                         value = child_min_size[i0]/weight
                         child_sizes.append((value,weight),)
                     else:
-                        min_size[i0] += child.w if i0==0 else child.h
+                        min_size[i0] += (child.w if i0==0 else child.h)
                     largest = max(largest, child_min_size[i1])
                     largest2 = max(largest2, child_min_size[i0])
 
@@ -448,6 +454,9 @@ class Widget():
 
                 min_size[i1] += largest
         
+        if debug:
+            print(' '*indent, '->', min_size)
+
         return tuple(min_size)
     
     def stretch_to_max(self, children, axis=Tags.X):
@@ -587,8 +596,10 @@ class Widget():
                 for child in self._children:
                     # set the child's width to the calculated value, multiplied by its
                     # stretch_value (x) - which is it's multiplier to take up more room
+
                     if child in fluid_width_children:
                         widget_width = int(width_individual*child.wlayout.stretch_value[0])
+
                         if not child.fixed_size[0]:
                             child.w = widget_width
                         else:
@@ -610,7 +621,7 @@ class Widget():
                 # all child widgets should be even height
 
                 # get a list of children which are allowed to stretch on the y axis
-                fluid_width_children = self.filter_children_top(lambda c: c.wlayout.stretch[1])
+                fluid_height_children = self.filter_children_top(lambda c: c.wlayout.stretch[1])
                 
                 # calculate the area of space which is given to stretchable children
                 stretch_height = self.get_fluid_area(Tags.Y)
@@ -618,7 +629,7 @@ class Widget():
                 # calculate the sum of all the stretch values of fluid children
                 # this is useful, because some children will need to take up 2x the room
                 # that another fluid child takes up - so this allows it to take up that amount
-                stretch_to_max = self.stretch_to_max(fluid_width_children, Tags.Y)
+                stretch_to_max = self.stretch_to_max(fluid_height_children, Tags.Y)
 
                 # calculate the height of each stretchable child according to the maximum area
                 height_individual = 1
@@ -640,9 +651,10 @@ class Widget():
                 for child in self._children:
                     # set the child's height to the calculated value, multiplied by its
                     # stretch_value (y) - which is it's multiplier to take up more room
-                    if child in fluid_width_children:
+                    if child in fluid_height_children:
                         widget_height = int(height_individual*child.wlayout.stretch_value[1])
-                        if not child.fixed_size[1]:
+                        
+                        if not child.fixed_size[0]:
                             child.h = widget_height
                         else:
                             available_space = widget_height
