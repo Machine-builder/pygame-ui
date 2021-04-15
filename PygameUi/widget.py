@@ -29,6 +29,7 @@ import pygame
 
 from . import WidgetTypes
 from . import Layout
+from .widget_tags import Tags
 
 import copy
 import math
@@ -45,6 +46,7 @@ class WidgetLayout():
         self.stretch_value = stretch_value
 
         self.margin = (0,0,0,0)
+        self.margin_align = (Tags.CENTER,Tags.CENTER)
 
 class WidgetStyle():
     """a widget's style
@@ -81,12 +83,23 @@ class Widget():
     def __init__(self, parent=None):
         self._parent = parent
 
-        self._name = 'widget'
-        self._size = (100,100)
-        self._min_size = (5,5)
-        self._loc = (0,0)
+        self._name = 'widget' #  name
+        self._classes = [] #  classes
+        self._size = (100,100) # size
+        self._min_size = (5,5) # minimum size
+        self._loc = (0,0) # location (relative to parent)
 
+        # hard-set a minimum widget size
+        # otherwise it'll just be automatically
+        # calculated based on children, padding, etc
         self.fixed_min_size = (False, (0,0))
+        # force the widget to stay a set size
+        # this means the margins will auto
+        # adjust to suit the size
+        # [0] is whether to fix the size,
+        # [1] is the set (w,h)
+        # [2] is the minimum margin
+        self._fixed_size = (False, (10,10), (1,1,1,1))
 
         self._padding = (2,2,2,2)
 
@@ -125,6 +138,13 @@ class Widget():
             max(self.minimum_size[0],size[0]),
             max(self.minimum_size[1],size[1]))
         self.reposition_children()
+    
+    @property
+    def fixed_size(self): return self._fixed_size
+    def set_fixed_size(self, fixed=True, size=(5,5), min_margin=(1,1,1,1)):
+        """set a widget's fixed size, useful for in fluid widgets
+        when you want to keep them a constant size"""
+        self._fixed_size = (fixed, size, min_margin)
 
     @property
     def loc(self): return self._loc
@@ -184,12 +204,17 @@ class Widget():
     def y(self): return self._loc[1]
 
     @property
+    def real_w(self):
+        return self.w+self.margin[1]+self.margin[3]
+    @property
+    def real_h(self):
+        return self.h+self.margin[0]+self.margin[2]
+
+    @property
     def center(self):
-        rw = self.w+self.margin[1]+self.margin[3]
-        rh = self.h+self.margin[0]+self.margin[2]
         return (
-            int(self.scrn_x + rw/2 - self.margin[1]),
-            int(self.scrn_y + rh/2 - self.margin[0])
+            int(self.scrn_x + self.real_w/2 - self.margin[1]),
+            int(self.scrn_y + self.real_h/2 - self.margin[0])
         )
 
     @w.setter
@@ -214,6 +239,12 @@ class Widget():
         if not self._parent: return self.y
         return self.y+self._parent.scrn_y
     
+    @property
+    def fluid_size(self): return self.wlayout.stretch_value
+    @fluid_size.setter
+    def fluid_size(self, stretch_value):
+        self.set_fluid_size(*stretch_value)
+
     def set_fluid_size(self,x=1,y=1):
         """sets how a widget should act in a parent widget
         
@@ -285,6 +316,9 @@ class Widget():
         """set a layout for the widget's children to follow"""
         self._layout = layout
         self.reposition_children()
+    @property
+    def layout(self):
+        return self._layout
     
     def draw(self, surface):
         """draw the widget onto the surface"""
@@ -333,6 +367,12 @@ class Widget():
         matches = filter(filter_function,
                          [child for child in self.all_children()])
         return matches
+    
+    def filter_children_top(self, filter_function):
+        """returns a list of all children of this widget that
+        match the provided filter"""
+        matches = [child for child in self._children if filter_function(child)]
+        return matches
 
     def get_minimum_size(self, debug=False, indent=0):
         """returns the minimum size of the widget,
@@ -343,6 +383,15 @@ class Widget():
             self.min_w,
             self.min_h
         ]
+
+        fixed_size = self.fixed_size
+        if fixed_size[0]:
+            size, margins = fixed_size[1], fixed_size[2]
+            min_size = [
+                size[0] + margins[1] + margins[3],
+                size[1] + margins[0] + margins[2]
+            ]
+            return min_size
 
         if self.fixed_min_size[0]:
             return self.fixed_min_size[1]
@@ -362,10 +411,10 @@ class Widget():
         # if this widget has children, add up their sizes
         if len(self._children) > 0:
 
-            if layout.size == Layout.FIT:
-                if layout.direction == Layout.ROW:
+            if layout.size == Tags.FIT:
+                if layout.direction == Tags.ROW:
                     i0, i1 = 0, 1
-                elif layout.direction == Layout.COL:
+                elif layout.direction == Tags.COL:
                     i0, i1 = 1, 0
                 
                 # flip the axis being calculated
@@ -373,6 +422,7 @@ class Widget():
                 # are on a row or column
 
                 largest = 0
+                largest2 = 0
                 child_sizes = []
 
                 for child in self._children:
@@ -384,19 +434,112 @@ class Widget():
                     else:
                         min_size[i0] += child.w if i0==0 else child.h
                     largest = max(largest, child_min_size[i1])
+                    largest2 = max(largest2, child_min_size[i0])
 
                 child_sizes.sort(key=lambda i: i[0], reverse=True)
-                largest_v = child_sizes[0][0]
 
-                for _,w in child_sizes:
-                    min_size[i0] += largest_v*w
+                if len(child_sizes) > 0:
+                    largest_v = child_sizes[0][0]
+                    for _,w in child_sizes:
+                        min_size[i0] += largest_v*w
+                
+                else:
+                    min_size[i0] += largest2
 
                 min_size[i1] += largest
         
         return tuple(min_size)
     
-    def stretch_to_max(self, children, index=0):
-        return sum([child.wlayout.stretch_value[index] for child in children])
+    def stretch_to_max(self, children, axis=Tags.X):
+        """return the maximum stretch value (the sum of
+        all child widget's stretch value in a given
+        axis"""
+        return sum([child.wlayout.stretch_value[axis] for child in children])
+    
+    def adjust_margins_to_area(self, area_x, area_y):
+        """adjust a widget's margins to make it
+        a set width and height within an area"""
+        v, target_size, min_margin = self.fixed_size
+
+        self.w = area_x
+        differenceX = area_x - target_size[0]
+        differenceY = area_y - target_size[1]
+
+        if self.wlayout.margin_align[0] == Tags.CENTER:
+            margin_L, margin_R = math.floor(differenceX/2), math.ceil(differenceX/2)
+        elif self.wlayout.margin_align[0] == Tags.LEFT:
+            margin_L, margin_R = min_margin[1], differenceX-min_margin[1]
+        elif self.wlayout.margin_align[0] == Tags.RIGHT:
+            margin_L, margin_R = differenceX-min_margin[3], min_margin[3]
+        
+        if self.wlayout.margin_align[1] == Tags.CENTER:
+            margin_T, margin_B = math.floor(differenceY/2), math.ceil(differenceY/2)
+        elif self.wlayout.margin_align[1] == Tags.LEFT:
+            margin_T, margin_B = min_margin[0], differenceY-min_margin[0]
+        elif self.wlayout.margin_align[1] == Tags.RIGHT:
+            margin_T, margin_B = differenceY-min_margin[2], min_margin[2]
+        
+        self.margin = (margin_T,
+                       margin_L,
+                       margin_B,
+                       margin_R)
+    
+    def get_fluid_area(self, axis=Tags.X):
+        if axis == Tags.X:
+            cover_area = self.w
+            cover_area -= sum([child.w for child in self.filter_children_top(
+                lambda c: not c.wlayout.stretch[0])])
+            cover_area -= self._padding[1]
+            cover_area -= self._padding[3]
+            cover_area -= self.margin[1]
+            cover_area -= self.margin[3]
+        elif axis == Tags.Y:
+            cover_area = self.h
+            cover_area -= sum([child.w for child in self.filter_children_top(
+                lambda c: not c.wlayout.stretch[1])])
+            cover_area -= self._padding[0]
+            cover_area -= self._padding[2]
+            cover_area -= self.margin[0]
+            cover_area -= self.margin[2]
+        return cover_area
+    
+    def align_fluid_children(self):
+        """automatically adjust child widget's
+        fluid values depending on their minimum
+        sizes in relation to each other"""
+        # get fluid area depending on whether this
+        # widget is aligned as ROW or COL
+        layout = self.layout
+        if layout.direction == Tags.ROW:
+            # calculate how much space is available
+            # for fluid widgets to use up
+            fluid_area = self.get_fluid_area(Tags.X)
+            # get a list of all children which are fluid
+            # in this axis
+            fluid_children = self.filter_children_top(
+                lambda c: c.wlayout.stretch[0])
+            # iterate through all the fluid children,
+            # and work out their ratio for space that
+            # they should take up
+            for child in fluid_children:
+                min_w = child.get_minimum_size()[0]
+                ratio = min_w/fluid_area
+                child.fluid_size = (ratio, child.fluid_size[1])
+        elif layout.direction == Tags.COL:
+            # calculate how much space is available
+            # for fluid widgets to use up
+            fluid_area = self.get_fluid_area(Tags.Y)
+            # get a list of all children which are fluid
+            # in this axis
+            fluid_children = self.filter_children_top(
+                lambda c: c.wlayout.stretch[1])
+            # iterate through all the fluid children,
+            # and work out their ratio for space that
+            # they should take up
+            for child in fluid_children:
+                min_h = child.get_minimum_size()[1]
+                ratio = min_h/fluid_area
+                child.fluid_size = (child.fluid_size[0], ratio)
     
     def reposition_children(self):
         """reposition own children based on layout"""
@@ -407,32 +550,27 @@ class Widget():
         # otherwise we'll run into x/0 division errors
         if len(self._children) == 0: return
 
-        layout = self._layout
+        layout = self.layout
 
-        if layout.direction == Layout.ROW:
-            if layout.size == Layout.FIT:
+        if layout.direction == Tags.ROW:
+            if layout.size == Tags.FIT:
                 # all child widgets should be even width
 
                 # get a list of children which are allowed to stretch on the x axis
-                fluid_width_children = list([child for child in self._children if child.wlayout.stretch[0]])
-                # get a list of children which are not allowed to stretch on the x axis
-                fixed_width_children = list([child for child in self._children if not child.wlayout.stretch[0]])
+                fluid_width_children = self.filter_children_top(lambda c: c.wlayout.stretch[0])
                 
                 # calculate the area of space which is given to stretchable children
-                stretch_width = self._size[0]
-                stretch_width -= sum([child.size[0] for child in fixed_width_children])
-                stretch_width -= self._padding[1] # L padding (left)
-                stretch_width -= self._padding[3] # R padding (right)
-                stretch_width -= self.margin[1]
-                stretch_width -= self.margin[3]
+                stretch_width = self.get_fluid_area(Tags.X)
 
                 # calculate the sum of all the stretch values of fluid children
                 # this is useful, because some children will need to take up 2x the room
                 # that another fluid child takes up - so this allows it to take up that amount
-                stretch_to_max = self.stretch_to_max(fluid_width_children, 0)
+                stretch_to_max = self.stretch_to_max(fluid_width_children, Tags.X)
 
                 # calculate the width of each stretchable child according to the maximum area
-                width_individual = stretch_width/stretch_to_max
+                width_individual = 1
+                if stretch_to_max > 0:
+                    width_individual = stretch_width/stretch_to_max
 
                 # calculate the individual height of each child widget
                 height_individual = self.h
@@ -451,7 +589,12 @@ class Widget():
                     # stretch_value (x) - which is it's multiplier to take up more room
                     if child in fluid_width_children:
                         widget_width = int(width_individual*child.wlayout.stretch_value[0])
-                        child.w = widget_width
+                        if not child.fixed_size[0]:
+                            child.w = widget_width
+                        else:
+                            available_space = widget_width
+                            child.adjust_margins_to_area(available_space, height_individual)
+
                     child.x = x_position
                     x_position += child.w
                 
@@ -462,32 +605,27 @@ class Widget():
                     # the top border
                     child.y = self._padding[0] + self.margin[0]
         
-        elif layout.direction == Layout.COL:
-            if layout.size == Layout.FIT:
+        elif layout.direction == Tags.COL:
+            if layout.size == Tags.FIT:
                 # all child widgets should be even height
 
                 # get a list of children which are allowed to stretch on the y axis
-                fluid_width_children = list([child for child in self._children if child.wlayout.stretch[1]])
-                # get a list of children which are not allowed to stretch on the y axis
-                fixed_width_children = list([child for child in self._children if not child.wlayout.stretch[1]])
+                fluid_width_children = self.filter_children_top(lambda c: c.wlayout.stretch[1])
                 
                 # calculate the area of space which is given to stretchable children
-                stretch_height = self._size[1]
-                stretch_height -= sum([child.size[1] for child in fixed_width_children])
-                stretch_height -= self._padding[0] # T padding (top)
-                stretch_height -= self._padding[2] # B padding (bottom)
-                stretch_height -= self.margin[0]
-                stretch_height -= self.margin[2]
+                stretch_height = self.get_fluid_area(Tags.Y)
 
                 # calculate the sum of all the stretch values of fluid children
                 # this is useful, because some children will need to take up 2x the room
                 # that another fluid child takes up - so this allows it to take up that amount
-                stretch_to_max = self.stretch_to_max(fluid_width_children, 1)
+                stretch_to_max = self.stretch_to_max(fluid_width_children, Tags.Y)
 
                 # calculate the height of each stretchable child according to the maximum area
-                height_individual = stretch_height/stretch_to_max
+                height_individual = 1
+                if stretch_to_max > 0:
+                    height_individual = stretch_height/stretch_to_max
 
-                # calculate the individual height of each child widget
+                # calculate the individual width of each child widget
                 width_individual = self.w
                 width_individual -= self._padding[1] # L padding (left)
                 width_individual -= self._padding[3] # R padding (right)
@@ -504,7 +642,12 @@ class Widget():
                     # stretch_value (y) - which is it's multiplier to take up more room
                     if child in fluid_width_children:
                         widget_height = int(height_individual*child.wlayout.stretch_value[1])
-                        child.h = widget_height
+                        if not child.fixed_size[1]:
+                            child.h = widget_height
+                        else:
+                            available_space = widget_height
+                            child.adjust_margins_to_area(width_individual, available_space)
+                    
                     child.y = y_position
                     y_position += child.h
                 

@@ -1,4 +1,4 @@
-
+from .widget_tags import Tags
 
 class Layout():
     """a Layout,
@@ -9,6 +9,7 @@ class Layout():
     attributes:
      - direction : ROW, COL, ~GRID~
      - size : FIT, TOP, BOT
+    (all attributes of widget_tags.Tags)
      
     size: FIT allows the children
     widgets to squash and stretch
@@ -22,14 +23,6 @@ class Layout():
     as TOP, except they're snapped
     to the bottom instead"""
 
-    ROW = 0
-    COL = 1
-    GRID = 2
-
-    FIT = 0
-    TOP = 1
-    BOT = 2
-
-    def __init__(self, direction=0, size=0):
+    def __init__(self, direction=Tags.ROW, size=Tags.FIT):
         self.direction = direction
         self.size = size
