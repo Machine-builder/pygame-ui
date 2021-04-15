@@ -1,18 +1,18 @@
 # pygame-ui
-# Introduction & Overview
+## Introduction & Overview
 
 Here's my attempt at creating a fluid **User Interface** library built for **pygame 2+**
 
 This project is current VERY EARLY in development, so there are probably loads of bugs that you'll experience when messing about with it, so feel free to open an issue or create a PR and fix the bug yourself :)
 
-# How to use
+## How to use
 Just download the repo, extract it, and run the test files! - Feel free to look into how they work
 
 **Warning**: Some `test_*.py` files may no longer be functional, as I've done quite a large rewrite of the main `Widget` & `Container` code. I'll try and get all the tests setup properly asap.
 
 **Good Practice**: `test_complex.py` is the most recent of the `test_*.py` files, and it is therefor written the most efficiently and pythonic. I recommend you take a look through it so you can plan out how to setup your own interfaces.
 
-## Further Code Examples
+### Further Code Examples
 **A window with two stretching widgets, organised in a row**
 
 ```python
