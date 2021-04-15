@@ -22,4 +22,4 @@ class ImageWidget(Widget):
         image_pos = (center[0]-self.image_size_half[0],
                      center[1]-self.image_size_half[1])
         surface.blit(self.image, image_pos)
-        # pygame.draw.circle(surface, (100,255,100), center, 7, 2)
+        pygame.draw.circle(surface, (100,255,100), center, 7, 2)

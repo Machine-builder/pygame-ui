@@ -297,8 +297,8 @@ class Widget():
 
     @property
     def center(self):
-        return (int(self.scrn_x + self.real_w/2 - self.margin[1]),
-                int(self.scrn_y + self.real_h/2 - self.margin[0]))
+        return (int(self.scrn_x + self.real_w/2 - self.margin[3]),
+                int(self.scrn_y + self.real_h/2 - self.margin[2]))
     
 
     # padding & margins ---------------------------------------------------- #

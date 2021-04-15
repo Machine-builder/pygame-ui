@@ -41,7 +41,7 @@ font = pygame.font.Font('font.ttf', 16)
 
 boring_label = Label(None, font, "This is a label")
 boring_label.set_style( WidgetStyle(border=(1,(0,0,0)), border_radius=2) )
-boring_label.fluid_size = 1,1
+boring_label.fluid_size = 1,0.8
 boring_label.margin = 1
 window.add_child(boring_label)
 
@@ -70,6 +70,9 @@ cool_button2.set_fixed_size(
 )
 def print_test2(): print("print_test() function called: Hey")
 cool_button2.on_click = print_test2
+
+cool_button.wlayout.margin_align = (Tags.CENTER, Tags.CENTER)
+cool_button2.wlayout.margin_align = (Tags.CENTER, Tags.CENTER)
 
 container.add_child(cool_button)
 container.add_child(cool_button2)
