@@ -24,6 +24,7 @@ import PygameUi
 Window = PygameUi.Window
 Widget = PygameUi.Widget
 Layout = PygameUi.Layout
+Tags = pygameUi.widget_tags.Tags
 
 # initialise a main window,
 # and set its size to 300x200
@@ -35,8 +36,7 @@ main_window.set_size((300,200),)
 # that child elements should be
 # stretched to fit the space
 
-window_layout = Layout(Layout.ROW, Layout.FIT)
-main_window.set_layout(window_layout)
+main_window.layout_direction = Tags.ROW
 
 # create a widget for the left
 # and right side, and set them
