@@ -1,16 +1,20 @@
 # pygame-ui
-My attempt at creating a fluid ui library built for pygame
+# introduction & overview
 
-This project is current VERY EARLY in development,
-so there are probably loads of bugs that you'll experience when messing about with it,
-so feel free to open an issue or create a PR and fix the bug yourself :)
+Here's my attempt at creating a fluid **User Interface** library built for **pygame 2+**
 
-# how-to-use
-Just download the code, and run the test files - feel free to take a look at how they work!
+This project is current VERY EARLY in development, so there are probably loads of bugs that you'll experience when messing about with it, so feel free to open an issue or create a PR and fix the bug yourself :)
 
-Basic examples:
+# How to use
+Just download the repo, extract it, and run the test files! - Feel free to look into how they work
 
-## A window with two stretching widgets in a row
+**Warning**: Some `test_*.py` files may no longer be functional, as I've done quite a large rewrite of the main `Widget` & `Container` code. I'll try and get all the tests setup properly asap.
+
+**Good Practice**: `test_complex.py` is the most recent of the `test_*.py` files, and it is therefor written the most efficiently and pythonic. I recommend you take a look through it so you can plan out how to setup your own interfaces.
+
+## Further Code Examples
+**A window with two stretching widgets, organised in a row**
+
 ```python
 import PygameUi
 Window = PygameUi.Window
@@ -54,12 +58,10 @@ main_window.add_children([child_left,
 # sure how that would be setup, I
 # recommend you look into some of the
 # test files to get a rough idea
-
 ```
 
-# extra-notes
-This code is awful, I'm aware - but I'd appreciate it if you don't go steal it and claim it as your own :P
+## extra notes
+This code is awful, I'm aware.. haha
 
-# license
-Please make sure to read the COPYING file before deciding to release your own versions of my code,
-also feel free to add a PR to change anything or fix anything up
+## license
+Please make sure to read the COPYING file before deciding to release your own versions of my code, also feel free to add a PR to change anything or fix anything up
