@@ -27,10 +27,13 @@ padding support:
 
 import pygame
 
+from typing import Union
+
 from . import WidgetTypes
 from . import Layout
 from .widget_tags import Tags
 from .styles import Style
+from . import widget_checks
 
 import copy
 import math
@@ -44,7 +47,9 @@ class Widget():
      - name
      - size
      - location
-     - children"""
+     - children (used in containers)
+     - style
+    """
     
     def __init__(self, parent=None):
         self._parent = parent
@@ -52,36 +57,32 @@ class Widget():
         self.type = WidgetTypes.WIDGET
 
         self._name = 'widget' #  name
-        self._classes = [] #  classes
+        self._classes = [] # classes
         self._size = (100,100) # size
         self._min_size = (5,5) # minimum size
         self._loc = (0,0) # location (relative to parent)
 
-        # hard-set a minimum widget size
-        # otherwise it'll just be automatically
-        # calculated based on children, padding, etc
-        self.fixed_min_size = (False, (0,0))
-        # force the widget to stay a set size
-        # this means the margins will auto
-        # adjust to suit the size
-        # [0] is whether to fix the size,
-        # [1] is the set (w,h)
-        # [2] is the minimum margin
+        # is_fixed, size, min_margin
         self._fixed_size = (False, (10,10), (1,1,1,1))
+        # is_fixed, size
+        self.fixed_min_size = (False, (0,0))
 
-        self._padding = (2,2,2,2)
-
+        self._children = []
         self._auto_reposition_children = False
         self._has_children = False
 
         self._style = Style()
-
-        self._children = []
-
+        self._styles_other = {}
         self.layout = Layout()
         self.minimum_size = self.get_minimum_size()
 
         self._on_click = None
+
+        self._is_focused = False
+        self._is_focusable = False
+
+        self._is_hovered = False
+        self._is_hoverable = False
     
     def copy(self):
         return copy.deepcopy(self)
@@ -103,6 +104,17 @@ class Widget():
     @name.setter
     def name(self, name):
         self._name = name
+    
+
+    # class defining ------------------------------------------------------- #
+
+    def add_class(self, class_name):
+        self._classes.append(class_name)
+    def remove_class(self, class_name):
+        if self.is_class(class_name):
+            self._classes.remove(class_name)
+    def is_class(self, class_name):
+        return class_name in self._classes
     
 
     # size functions ------------------------------------------------------- #
@@ -298,6 +310,23 @@ class Widget():
         if self.parent:
             self.parent.reposition_children_check()
     
+    def style_copy(self):
+        return copy.deepcopy(self._style)
+    
+    def style_other_add(self, function, style):
+        self._styles_other[function] = style
+    
+    def style_other_remove(self, function):
+        if function in self._styles_other:
+            self._styles_other.pop(function)
+    
+    def get_style_for(self, check=widget_checks.Checks.is_focused) -> Union[Style,None]:
+        if type(check) == str:
+            return self._styles_other.get(widget_checks.Shortnames[check],
+                                          None)
+        else:
+            return self._styles_other.get(check,None)
+    
 
     # drawing/rendering ---------------------------------------------------- #
 
@@ -306,7 +335,12 @@ class Widget():
     
     def draw(self, surface):
         """draw the widget onto the surface"""
-        self._style.draw(surface, self.rect)
+        draw_in_style = self._style
+        for function, style in self._styles_other.items():
+            if function(self):
+                draw_in_style = style
+                break
+        draw_in_style.draw(surface, self.rect)
         self.ovr_draw(surface)
         for child in self._children:
             child.draw(surface)
@@ -322,6 +356,42 @@ class Widget():
         if function:
             self.type = WidgetTypes.BUTTON
         self._on_click = function
+    
+    @property
+    def is_focused(self):
+        return self._is_focused
+    @is_focused.setter
+    def is_focused(self, value):
+        self._is_focused = value
+    @property
+    def is_focusable(self):
+        return self._is_focusable
+    def set_focusable(self, focusable, style_on_focus=None):
+        self._is_focusable = focusable
+        check = widget_checks.Checks.is_focused
+        if focusable:
+            added_style = style_on_focus or self.style_copy()
+            self.style_other_add(check, added_style)
+        else:
+            self.style_other_remove(check)
+    
+    @property
+    def is_hovered(self):
+        return self._is_hovered
+    @is_hovered.setter
+    def is_hovered(self, value):
+        self._is_hovered = value
+    @property
+    def is_hoverable(self):
+        return self._is_hoverable
+    def set_hoverable(self, hoverable, style_on_focus=None):
+        self._is_hoverable = hoverable
+        check = widget_checks.Checks.is_hovered
+        if hoverable:
+            added_style = style_on_focus or self.style_copy()
+            self.style_other_add(check, added_style)
+        else:
+            self.style_other_remove(check)
     
 
     # minimum-size calculations for scaling -------------------------------- #

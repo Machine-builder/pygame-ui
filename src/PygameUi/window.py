@@ -9,6 +9,14 @@ class Window(container.Container):
         """processes pygame events, like mouse clicks if needed"""
         mouse_position = pygame.mouse.get_pos()
 
+        # set the is_hovered attribute for hoverable child widgets
+        hoverable_children = list(self.filter_children(lambda child: child.is_hoverable))
+        hovered_children = list(filter(
+            lambda child: child.loc_within_borders(mouse_position),
+            hoverable_children))
+        for child in hoverable_children:
+            child.is_hovered = child in hovered_children
+
         clicks = []
         for event in pygame_events:
             if event.type == pygame.MOUSEBUTTONUP:

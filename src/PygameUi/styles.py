@@ -54,7 +54,7 @@ class Style():
         self._margin = (0,0,0,0)
         self._margin_align = (Tags.CENTER,Tags.CENTER)
 
-        self._padding = (1,1,1,1)
+        self._padding = (0,0,0,0)
     
     def draw(self, surface, rect):
         if not self._transparent_background:

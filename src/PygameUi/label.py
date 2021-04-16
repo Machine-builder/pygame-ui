@@ -1,8 +1,13 @@
 import pygame
-from . import WidgetTypes
-from . import ImageWidget
 
-class Label(ImageWidget):
+from . import WidgetTypes
+from . import Image
+
+class Label(Image):
+    """basic label
+
+    can display text"""
+
     def __init__(self, parent=None, font:pygame.font.Font=None, text=''):
         self.font = font
         self.set_text(text)

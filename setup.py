@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="pygame-ui-mb",
-    version="0.1.0",
+    version="0.1.1",
     author="MACHINE_BUILDER",
     description="A package for fluid uis in PyGame",
     long_description=long_description,

@@ -2,19 +2,27 @@ import pygame
 from . import WidgetTypes
 from . import Widget
 
-class ImageWidget(Widget):
+class Image(Widget):
     def __init__(self, parent=None, image:pygame.Surface=None):
         super().__init__(parent)
+        self._image=  image
         self.set_image(image)
         self.type = WidgetTypes.IMAGE
     
+    @property
+    def image(self):
+        return self._image
+    @image.setter
+    def image(self, image):
+        self.set_image(image)
+    
     def set_image(self, image):
         """set the widget's image"""
-        self.image = image
-        self.image_size = self.image.get_size()
+        self._image = image
+        self.image_size = self._image.get_size()
         self.image_size_half = (int(self.image_size[0]/2),
                                 int(self.image_size[1]/2))
-        self.set_minimum_size(*self.image.get_size())
+        self.set_minimum_size(*self._image.get_size())
     
     def ovr_draw(self, surface):
         """draw the image widget"""

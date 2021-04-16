@@ -1,16 +1,19 @@
 
 # import modules ----------------------------------------------------------- #
+
+import sys
+sys.path.append('../')
 import PygameUi
+
 pygame = PygameUi.pygame
 
-Window = PygameUi.Window
+Tags = PygameUi.widget_tags.Tags
 
 Widget = PygameUi.Widget
-WidgetLayout = PygameUi.WidgetLayout
-WidgetStyle = PygameUi.WidgetStyle
-ImageWidget = PygameUi.ImageWidget
+Container = PygameUi.Container
+Window = PygameUi.Window
 
-Layout = PygameUi.Layout
+Image = PygameUi.Image
 
 pygame.init()
 
@@ -29,18 +32,23 @@ window.set_size((window_w,window_h),)
 window.x = 20
 window.y = 20
 
-window.set_style(WidgetStyle(border=(2,(255,255,255)), border_radius=2))
+window.style.border_thickness = 1
+window.style.border_radius = 2
+window.style.padding = 2
 
-image_1 = pygame.image.load('image_1.png')
+image_1 = pygame.image.load('../resources/image_1.png')
 image_1.set_colorkey((0,0,0),)
 
-inner_child_1 = ImageWidget(image=image_1)
+inner_child_1 = Image(image=image_1)
 
-inner_child_1.set_style( WidgetStyle(border=(1,(0,0,0)), border_radius=2) )
+inner_child_1.style.border_thickness = 1
+inner_child_1.style.border_radius = 2
 inner_child_1.set_fluid_size(1,1)
 inner_child_1.margin = 1
 
 window.add_child(inner_child_1)
+
+window.auto_reposition_children = True
 
 
 # main loop ---------------------------------------------------------------- #
@@ -69,13 +77,12 @@ while run:
     if keys[pygame.K_s]:
         window_h += 100*deltatime
     
-    window.w = int(window_w)
-    window.h = int(window_h)
+    window.size = (int(window_w), int(window_h))
 
     window_w = max(window.minimum_size[0], window_w)
     window_h = max(window.minimum_size[1], window_h)
 
-    display.fill((20,20,25),)
+    display.fill((255,255,255))
 
     window.draw(display)
 

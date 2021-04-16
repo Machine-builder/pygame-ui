@@ -28,9 +28,16 @@ class Tags:
     TOP = 1
     BOT = 2
 
+    # used for alignment of fluid margins
     LEFT = 0
     CENTER = 1
     RIGHT = 2
 
+    # used for buttons
+    TEXT = 0
+    IMAGE = 1
+    BLANK = 2
+
+    # used for axis calculations
     X = 0
     Y = 1

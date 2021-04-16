@@ -13,7 +13,7 @@ Widget = PygameUi.Widget
 Container = PygameUi.Container
 Window = PygameUi.Window
 
-ImageWidget = PygameUi.ImageWidget
+Image = PygameUi.Image
 Label = PygameUi.Label
 
 
