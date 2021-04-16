@@ -179,7 +179,7 @@ class Container(widget.Widget):
                 print("fluid area X:", cover_area)
         elif axis == Tags.Y:
             cover_area = self.h
-            cover_area -= sum([child.w for child in self.filter_children_top(
+            cover_area -= sum([child.h for child in self.filter_children_top(
                 lambda c: not c.style.stretch[1])])
             cover_area -= self.style.padding[0]
             cover_area -= self.style.padding[2]
@@ -272,20 +272,23 @@ class Container(widget.Widget):
                     # set the child's width to the calculated value, multiplied by its
                     # stretch_value (x) - which is it's multiplier to take up more room
 
+                    widget_width = child.w
                     if child in fluid_width_children:
-                        widget_width = int(width_individual*child.style.stretch_value[0])
+                        widget_width = width_individual*child.style.stretch_value[0]
 
                         if not child.fixed_size[0]:
-                            child.w = widget_width
+                            child.w = int(widget_width)
                         else:
-                            available_space = widget_width
+                            available_space = int(widget_width)
                             child.adjust_margins_to_area(available_space, height_individual)
 
                     child.x = x_position
-                    x_position += child.w
+                    x_position += widget_width
                 
                 for child in self._children:
                     child.h = height_individual
+                    if child.fixed_size[0]:
+                        child.adjust_margins_to_area(child.w, height_individual)
                     # set the child's y position to this widget's padding
                     # basically, push it down a bit to give it room from
                     # the top border
@@ -326,20 +329,24 @@ class Container(widget.Widget):
                 for child in self._children:
                     # set the child's height to the calculated value, multiplied by its
                     # stretch_value (y) - which is it's multiplier to take up more room
+
+                    widget_height = child.h
                     if child in fluid_height_children:
-                        widget_height = int(height_individual*child.style.stretch_value[1])
+                        widget_height = height_individual*child.style.stretch_value[1]
                         
                         if not child.fixed_size[0]:
-                            child.h = widget_height
+                            child.h = int(widget_height)
                         else:
-                            available_space = widget_height
+                            available_space = int(widget_height)
                             child.adjust_margins_to_area(width_individual, available_space)
                     
                     child.y = y_position
-                    y_position += child.h
+                    y_position += widget_height
                 
                 for child in self._children:
                     child.w = width_individual
+                    if child.fixed_size[0]:
+                        child.adjust_margins_to_area(width_individual, child.h)
                     # set the child's x position to this widget's padding
                     # basically, push it right a bit to give it room from
                     # the left border

@@ -164,6 +164,7 @@ class Widget():
         """set a widget's fixed size, useful for in fluid widgets
         when you want to keep them a constant size"""
         self._fixed_size = (fixed, size, min_margin)
+        self.size = size
     
     @property
     def fluid_size(self): return self._style.stretch_value
@@ -371,7 +372,8 @@ class Widget():
         a set width and height within an area"""
         _, target_size, min_margin = self.fixed_size
 
-        self.w = area_x
+        self.size = (area_x, area_y)
+
         differenceX = area_x - target_size[0]
         differenceY = area_y - target_size[1]
 
