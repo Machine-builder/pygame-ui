@@ -29,13 +29,7 @@ Tags = pygameUi.widget_tags.Tags
 # initialise a main window,
 # and set its size to 300x200
 main_window = Window()
-main_window.set_size((300,200),)
-
-# set the layout to be a row,
-# and use Layout.FIT to specify
-# that child elements should be
-# stretched to fit the space
-
+main_window.size = (300,200)
 main_window.layout_direction = Tags.ROW
 
 # create a widget for the left
@@ -44,17 +38,16 @@ main_window.layout_direction = Tags.ROW
 # the same amount of space
 
 child_left = Widget()
-child_left.set_fluid_size(1,1)
+child_left.fluid_size = (1,1)
 
 child_right = Widget()
-child_right.set_fluid_size(1,1)
+child_right.fluid_size = (1,1)
 
 # experiment with changing child_left's
-# first value in .set_fluid_size()
+# first value in for its fluid_size
 # and see how that affects it!
 
-main_window.add_children([child_left,
-                          child_right])
+main_window.add_children([child_left, child_right])
 
 # this is NOT all the code required-
 # you also need your basic pygame loop
