@@ -14,7 +14,21 @@ class Container(widget.Widget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.type = WidgetTypes.CONTAINER
+        self._has_children = True
     
+
+    # auto-child-repositioning settings ------------------------------------ #
+    
+    @property
+    def auto_reposition_children(self):
+        return self._auto_reposition_children
+    @auto_reposition_children.setter
+    def auto_reposition_children(self, value):
+        self._auto_reposition_children = value
+    
+
+    # child adding --------------------------------------------------------- #
+
     def add_child(self, child):
         """add one child to the widget's children"""
         self.add_children([child],)
@@ -25,7 +39,29 @@ class Container(widget.Widget):
         for child in children:
             child.parent = self
         self.reposition_children()
+
     
+    # child removing ------------------------------------------------------- #
+
+    def remove_child(self, child):
+        """remove child from the widget's children
+        
+        returns True/False depending on whether the child
+        was in the widget's children list"""
+        if not child in self._children:
+            return False
+        self._children.remove(child)
+        child.parent = None
+        return True
+    
+    def remove_children(self, children):
+        """remove a list of children from the widget's children"""
+        for child in children:
+            self.remove_child(child)
+    
+
+    # child getting/filtering and deep searching --------------------------- #
+
     def child_at(self, index):
         """get a child at an index"""
         return self._children[index]
@@ -48,8 +84,12 @@ class Container(widget.Widget):
     def filter_children_top(self, filter_function):
         """returns a list of all children of this widget that
         match the provided filter"""
-        matches = [child for child in self._children if filter_function(child)]
+        matches = [
+            child for child in self._children if filter_function(child)]
         return matches
+    
+
+    # minimum size check --------------------------------------------------- #
     
     def ovr_add_minimum_size(self):
         layout = self.layout
@@ -74,8 +114,8 @@ class Container(widget.Widget):
 
                 for child in self._children:
                     child_min_size = child.get_minimum_size()
-                    if child.wlayout.stretch[i0]:
-                        weight = child.wlayout.stretch_value[i0]
+                    if child.style.stretch[i0]:
+                        weight = child.style.stretch_value[i0]
                         value = child_min_size[i0]/weight
                         child_sizes.append((value,weight),)
                     else:
@@ -97,17 +137,20 @@ class Container(widget.Widget):
         
         return min_size
     
+
+    # fluid area calculations ---------------------------------------------- #
+
     def stretch_to_max(self, children, axis=Tags.X):
         """return the maximum stretch value (the sum of
         all child widget's stretch value in a given
         axis"""
-        return sum([child.wlayout.stretch_value[axis] for child in children])
+        return sum([child.style.stretch_value[axis] for child in children])
     
     def get_fluid_area(self, axis=Tags.X):
         if axis == Tags.X:
             cover_area = self.w
             cover_area -= sum([child.w for child in self.filter_children_top(
-                lambda c: not c.wlayout.stretch[0])])
+                lambda c: not c.style.stretch[0])])
             cover_area -= self._padding[1]
             cover_area -= self._padding[3]
             cover_area -= self.margin[1]
@@ -115,7 +158,7 @@ class Container(widget.Widget):
         elif axis == Tags.Y:
             cover_area = self.h
             cover_area -= sum([child.w for child in self.filter_children_top(
-                lambda c: not c.wlayout.stretch[1])])
+                lambda c: not c.style.stretch[1])])
             cover_area -= self._padding[0]
             cover_area -= self._padding[2]
             cover_area -= self.margin[0]
@@ -136,7 +179,7 @@ class Container(widget.Widget):
             # get a list of all children which are fluid
             # in this axis
             fluid_children = self.filter_children_top(
-                lambda c: c.wlayout.stretch[0])
+                lambda c: c.style.stretch[0])
             # iterate through all the fluid children,
             # and work out their ratio for space that
             # they should take up
@@ -151,7 +194,7 @@ class Container(widget.Widget):
             # get a list of all children which are fluid
             # in this axis
             fluid_children = self.filter_children_top(
-                lambda c: c.wlayout.stretch[1])
+                lambda c: c.style.stretch[1])
             # iterate through all the fluid children,
             # and work out their ratio for space that
             # they should take up
@@ -176,7 +219,7 @@ class Container(widget.Widget):
                 # all child widgets should be even width
 
                 # get a list of children which are allowed to stretch on the x axis
-                fluid_width_children = self.filter_children_top(lambda c: c.wlayout.stretch[0])
+                fluid_width_children = self.filter_children_top(lambda c: c.style.stretch[0])
                 
                 # calculate the area of space which is given to stretchable children
                 stretch_width = self.get_fluid_area(Tags.X)
@@ -208,7 +251,7 @@ class Container(widget.Widget):
                     # stretch_value (x) - which is it's multiplier to take up more room
 
                     if child in fluid_width_children:
-                        widget_width = int(width_individual*child.wlayout.stretch_value[0])
+                        widget_width = int(width_individual*child.style.stretch_value[0])
 
                         if not child.fixed_size[0]:
                             child.w = widget_width
@@ -231,7 +274,7 @@ class Container(widget.Widget):
                 # all child widgets should be even height
 
                 # get a list of children which are allowed to stretch on the y axis
-                fluid_height_children = self.filter_children_top(lambda c: c.wlayout.stretch[1])
+                fluid_height_children = self.filter_children_top(lambda c: c.style.stretch[1])
                 
                 # calculate the area of space which is given to stretchable children
                 stretch_height = self.get_fluid_area(Tags.Y)
@@ -262,7 +305,7 @@ class Container(widget.Widget):
                     # set the child's height to the calculated value, multiplied by its
                     # stretch_value (y) - which is it's multiplier to take up more room
                     if child in fluid_height_children:
-                        widget_height = int(height_individual*child.wlayout.stretch_value[1])
+                        widget_height = int(height_individual*child.style.stretch_value[1])
                         
                         if not child.fixed_size[0]:
                             child.h = widget_height
@@ -279,3 +322,7 @@ class Container(widget.Widget):
                     # basically, push it right a bit to give it room from
                     # the left border
                     child.x = self._padding[1] + self.margin[1]
+
+        for child in self._children:
+            if child._has_children:
+                child.reposition_children()

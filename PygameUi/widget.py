@@ -30,85 +30,10 @@ import pygame
 from . import WidgetTypes
 from . import Layout
 from .widget_tags import Tags
+from .styles import Style
 
 import copy
 import math
-
-
-
-class WidgetLayout():
-    """a widget's layout values
-
-    used for children to define whether
-    they should stretch, and how much
-    room they should take up"""
-
-    def __init__(self, stretch=(True,True), stretch_value=(1,1)):
-        self.stretch = stretch
-        self.stretch_value = stretch_value
-
-        self.margin = (0,0,0,0)
-        self.margin_align = (Tags.CENTER,Tags.CENTER)
-
-
-
-class WidgetStyle():
-    """a widget's style
-    
-    controls how the widget is drawn"""
-
-    def __init__(self, background=(200,200,200), border=(0,(0,0,0)), border_radius=5):
-        self._background = background
-        self._border = border
-        self._border_radius = border_radius
-    
-    def draw(self, surface, rect):
-        pygame.draw.rect(surface=surface,
-                         color=self._background,
-                         rect=rect,
-                         border_radius=self._border_radius)
-        if self.border[0] != 0:
-            border_width, border_colour = self._border
-            pygame.draw.rect(surface=surface,
-                             color=border_colour,
-                             rect=rect,
-                             width=border_width,
-                             border_radius=self._border_radius)
-    
-    @property
-    def background(self):
-        return self._background
-    @background.setter
-    def background(self, colour):
-        self._background = colour
-    
-    @property
-    def border(self):
-        return self._border
-    @border.setter
-    def border(self, border):
-        self._border = border
-    
-    @property
-    def border_colour(self):
-        return self._border[1]
-    @border_colour.setter
-    def border_colour(self, colour):
-        self._border = (self._border[0], colour)
-    
-    @property
-    def border_thickness(self):
-        return self._border[0]
-    @border_thickness.setter
-    def border_thickness(self, thickness):
-        self._border = (thickness, self._border[1])
-    
-    @property
-    def border_radius(self):
-        return self._border_radius
-    @border_radius.setter
-    def border_radius(self, radius):
-        self._border_radius = radius
 
 
 
@@ -146,12 +71,14 @@ class Widget():
 
         self._padding = (2,2,2,2)
 
-        self._wlayout = WidgetLayout()
-        self._style = WidgetStyle()
+        self._auto_reposition_children = False
+        self._has_children = False
+
+        self._style = Style()
 
         self._children = []
 
-        self.set_layout(Layout())
+        self.layout = Layout()
         self.minimum_size = self.get_minimum_size()
 
         self._on_click = None
@@ -187,7 +114,7 @@ class Widget():
         self._size = (
             max(self.minimum_size[0],size[0]),
             max(self.minimum_size[1],size[1]))
-        self.reposition_children()
+        self.reposition_children_check()
     
     def set_size(self, size):
         self.size = size
@@ -239,7 +166,7 @@ class Widget():
         self._fixed_size = (fixed, size, min_margin)
     
     @property
-    def fluid_size(self): return self.wlayout.stretch_value
+    def fluid_size(self): return self._style.stretch_value
     @fluid_size.setter
     def fluid_size(self, stretch_value):
         self.set_fluid_size(*stretch_value)
@@ -255,9 +182,11 @@ class Widget():
         more space in organisation"""
         sx = bool(x)
         sy = bool(y)
-        self.wlayout.stretch = (sx,sy)
-        self.wlayout.stretch_value = (x if sx else 1,
-                                      y if sy else 1)
+        self._style.stretch = (sx,sy)
+        self._style.stretch_value = (x if sx else 1,
+                                     y if sy else 1)
+        if self.parent:
+            self.parent.reposition_children_check()
     
 
     # position functions --------------------------------------------------- #
@@ -317,29 +246,27 @@ class Widget():
                                  padding[0])
         elif type(padding) == int:
             self._padding = (padding,padding,padding,padding)
-        self.reposition_children()
+        self.reposition_children_check()
     
     @property
     def margin(self):
-        return self.wlayout.margin
+        return self._style.margin
     @margin.setter
     def margin(self, margin):
         if type(margin) == tuple:
             if len(margin) == 4:
-                self.wlayout.margin = margin
+                self.style.margin = margin
             elif len(margin) == 2:
-                self.wlayout.margin = (margin[1], margin[0],
-                                       margin[1], margin[0])
+                self.style.margin = (margin[1], margin[0],
+                                     margin[1], margin[0])
         elif type(margin) == int:
-            self.wlayout.margin = (margin,margin,margin,margin)
+            self.style.margin = (margin,margin,margin,margin)
         self.ensure_positive_margin()
-        self.reposition_children()
+        self.reposition_children_check()
     
     def ensure_positive_margin(self):
-        self.wlayout.margin = (
-            max(self.wlayout.margin[0],0), max(self.wlayout.margin[1],0),
-            max(self.wlayout.margin[2],0), max(self.wlayout.margin[3],0)
-        )
+        self.style.margin = (max(self.margin[0],0), max(self.margin[1],0),
+                             max(self.margin[2],0), max(self.margin[3],0))
 
 
     # borders & rects ------------------------------------------------------ #
@@ -369,6 +296,10 @@ class Widget():
     @property
     def layout(self):
         return self._layout
+    @layout.setter
+    def layout(self, layout):
+        self._layout = layout
+        self.reposition_children_check()
     
     @property
     def layout_direction(self):
@@ -376,28 +307,15 @@ class Widget():
     @layout_direction.setter
     def layout_direction(self, direction):
         self._layout.direction = direction
-
-    @property
-    def wlayout(self): return self._wlayout
-    @wlayout.setter
-    def wlayout(self, wlayout):
-        self._wlayout = wlayout
-        if self.parent:
-            self.parent.reposition_children()
+        self.reposition_children_check()
 
     @property
     def style(self): return self._style
     @style.setter
-    def style(self, style=WidgetStyle):
-        self.set_style(style)
-    def set_style(self, style):
-        """depreciated"""
+    def style(self, style:Style):
         self._style = style
-    
-    def set_layout(self, layout:Layout):
-        """set a layout for the widget's children to follow"""
-        self._layout = layout
-        self.reposition_children()
+        if self.parent:
+            self.parent.reposition_children_check()
     
 
     # drawing/rendering ---------------------------------------------------- #
@@ -473,24 +391,32 @@ class Widget():
         differenceX = area_x - target_size[0]
         differenceY = area_y - target_size[1]
 
-        if self.wlayout.margin_align[0] == Tags.CENTER:
+        style = self.style
+
+        if style.margin_align[0] == Tags.CENTER:
             margin_L, margin_R = math.floor(differenceX/2), math.ceil(differenceX/2)
-        elif self.wlayout.margin_align[0] == Tags.LEFT:
+        elif style.margin_align[0] == Tags.LEFT:
             margin_L, margin_R = min_margin[1], differenceX-min_margin[1]
-        elif self.wlayout.margin_align[0] == Tags.RIGHT:
+        elif style.margin_align[0] == Tags.RIGHT:
             margin_L, margin_R = differenceX-min_margin[3], min_margin[3]
         
-        if self.wlayout.margin_align[1] == Tags.CENTER:
+        if style.margin_align[1] == Tags.CENTER:
             margin_T, margin_B = math.floor(differenceY/2), math.ceil(differenceY/2)
-        elif self.wlayout.margin_align[1] == Tags.LEFT:
+        elif style.margin_align[1] == Tags.LEFT:
             margin_T, margin_B = min_margin[0], differenceY-min_margin[0]
-        elif self.wlayout.margin_align[1] == Tags.RIGHT:
+        elif style.margin_align[1] == Tags.RIGHT:
             margin_T, margin_B = differenceY-min_margin[2], min_margin[2]
         
         self.margin = (margin_T,
                        margin_L,
                        margin_B,
                        margin_R)
+    
+    def reposition_children_check(self):
+        """the function run which calls self.reposition_children()
+        but only if auto-reposition is enabled"""
+        if self._auto_reposition_children:
+            self.reposition_children()
     
     def reposition_children(self):
         """reposition own children based on layout
