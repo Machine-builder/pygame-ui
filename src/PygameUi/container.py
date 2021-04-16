@@ -89,6 +89,25 @@ class Container(widget.Widget):
         return matches
     
 
+    # run functions on children -------------------------------------------- #
+
+    def run_functions_on_children(self, function, all_children=True):
+        """run a given function on this widget's children
+        all_children specifies whether to run the function
+        for every child under this widget (deep search),
+        or just to run it for each top-level child
+        
+        returns the amount of children that the function
+        was run on"""
+        if all_children:
+            run_function_on = self.all_children()
+        else:
+            run_function_on = self._children
+        for child in run_function_on:
+            function(child)
+        return len(run_function_on)
+    
+
     # minimum size check --------------------------------------------------- #
     
     def ovr_add_minimum_size(self):
@@ -151,18 +170,21 @@ class Container(widget.Widget):
             cover_area = self.w
             cover_area -= sum([child.w for child in self.filter_children_top(
                 lambda c: not c.style.stretch[0])])
-            cover_area -= self._padding[1]
-            cover_area -= self._padding[3]
-            cover_area -= self.margin[1]
-            cover_area -= self.margin[3]
+            cover_area -= self.style.padding[1]
+            cover_area -= self.style.padding[3]
+            cover_area -= self.style.margin[1]
+            cover_area -= self.style.margin[3]
+            if self.name == 'debug':
+                print(self.size)
+                print("fluid area X:", cover_area)
         elif axis == Tags.Y:
             cover_area = self.h
             cover_area -= sum([child.w for child in self.filter_children_top(
                 lambda c: not c.style.stretch[1])])
-            cover_area -= self._padding[0]
-            cover_area -= self._padding[2]
-            cover_area -= self.margin[0]
-            cover_area -= self.margin[2]
+            cover_area -= self.style.padding[0]
+            cover_area -= self.style.padding[2]
+            cover_area -= self.style.margin[0]
+            cover_area -= self.style.margin[2]
         return cover_area
     
     def align_fluid_children(self):
@@ -236,14 +258,14 @@ class Container(widget.Widget):
 
                 # calculate the individual height of each child widget
                 height_individual = self.h
-                height_individual -= self._padding[0] # T padding (top)
-                height_individual -= self._padding[2] # B padding (bottom)
-                height_individual -= self.margin[0] # T margin (top)
-                height_individual -= self.margin[2] # B margin (bottom)
+                height_individual -= self.style.padding[0] # T padding (top)
+                height_individual -= self.style.padding[2] # B padding (bottom)
+                height_individual -= self.style.margin[0] # T margin (top)
+                height_individual -= self.style.margin[2] # B margin (bottom)
 
                 # track the x position for each child widget,
                 # so we can move it according to each child's width
-                x_position = self._padding[1] + self.margin[1]
+                x_position = self.style.padding[1] + self.style.margin[1]
 
                 # change the widths of all the fluid-width children
                 for child in self._children:
@@ -267,7 +289,7 @@ class Container(widget.Widget):
                     # set the child's y position to this widget's padding
                     # basically, push it down a bit to give it room from
                     # the top border
-                    child.y = self._padding[0] + self.margin[0]
+                    child.y = self.style.padding[0] + self.style.margin[0]
         
         elif layout.direction == Tags.COL:
             if layout.size == Tags.FIT:
@@ -291,14 +313,14 @@ class Container(widget.Widget):
 
                 # calculate the individual width of each child widget
                 width_individual = self.w
-                width_individual -= self._padding[1] # L padding (left)
-                width_individual -= self._padding[3] # R padding (right)
-                width_individual -= self.margin[1] # L margin (left)
-                width_individual -= self.margin[3] # R margin (right)
+                width_individual -= self.style.padding[1] # L padding (left)
+                width_individual -= self.style.padding[3] # R padding (right)
+                width_individual -= self.style.margin[1] # L margin (left)
+                width_individual -= self.style.margin[3] # R margin (right)
 
                 # track the y position for each child widget,
                 # so we can move it according to each child's height
-                y_position = self._padding[0] + self.margin[0]
+                y_position = self.style.padding[0] + self.style.margin[0]
 
                 # change the widths of all the fluid-height children
                 for child in self._children:
@@ -321,7 +343,7 @@ class Container(widget.Widget):
                     # set the child's x position to this widget's padding
                     # basically, push it right a bit to give it room from
                     # the left border
-                    child.x = self._padding[1] + self.margin[1]
+                    child.x = self.style.padding[1] + self.style.margin[1]
 
         for child in self._children:
             if child._has_children:

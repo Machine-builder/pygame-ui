@@ -237,16 +237,7 @@ class Widget():
         return self.style.padding
     @padding.setter
     def padding(self, padding):
-        if type(padding) == tuple:
-            if len(padding) == 4:
-                self.style.padding = padding
-            elif len(padding) == 2:
-                self.style.padding = (padding[1],
-                                 padding[0],
-                                 padding[1],
-                                 padding[0])
-        elif type(padding) == int:
-            self.style.padding = (padding,padding,padding,padding)
+        self.style.padding = padding
         self.reposition_children_check()
     
     @property
@@ -254,20 +245,8 @@ class Widget():
         return self.style.margin
     @margin.setter
     def margin(self, margin):
-        if type(margin) == tuple:
-            if len(margin) == 4:
-                self.style.margin = margin
-            elif len(margin) == 2:
-                self.style.margin = (margin[1], margin[0],
-                                     margin[1], margin[0])
-        elif type(margin) == int:
-            self.style.margin = (margin,margin,margin,margin)
-        self.ensure_positive_margin()
+        self.style.margin = margin
         self.reposition_children_check()
-    
-    def ensure_positive_margin(self):
-        self.style.margin = (max(self.margin[0],0), max(self.margin[1],0),
-                             max(self.margin[2],0), max(self.margin[3],0))
 
 
     # borders & rects ------------------------------------------------------ #
@@ -332,7 +311,7 @@ class Widget():
             child.draw(surface)
 
     
-
+    # event-linking functionality ------------------------------------------ #
 
     @property
     def on_click(self): return self._on_click
@@ -344,6 +323,7 @@ class Widget():
         self._on_click = function
     
 
+    # minimum-size calculations for scaling -------------------------------- #
 
     def ovr_add_minimum_size(self):
         """function intended to be overwritten"""
@@ -383,6 +363,9 @@ class Widget():
 
         return tuple(min_size)
     
+
+    # fluid margins -------------------------------------------------------- #
+
     def adjust_margins_to_area(self, area_x, area_y):
         """adjust a widget's margins to make it
         a set width and height within an area"""
@@ -395,27 +378,34 @@ class Widget():
         style = self.style
 
         if style.margin_align[0] == Tags.CENTER:
-            margin_L, margin_R = math.floor(differenceX/2), math.ceil(differenceX/2)
+            margin_L = math.floor(differenceX/2)
+            margin_R = math.ceil(differenceX/2)
         elif style.margin_align[0] == Tags.LEFT:
-            margin_L, margin_R = min_margin[1], differenceX-min_margin[1]
+            margin_L = min_margin[1]
+            margin_R = differenceX-min_margin[1]
         elif style.margin_align[0] == Tags.RIGHT:
-            margin_L, margin_R = differenceX-min_margin[3], min_margin[3]
+            margin_L = differenceX-min_margin[3]
+            margin_R = min_margin[3]
         
         if style.margin_align[1] == Tags.CENTER:
-            margin_T, margin_B = math.floor(differenceY/2), math.ceil(differenceY/2)
-        elif style.margin_align[1] == Tags.LEFT:
-            margin_T, margin_B = min_margin[0], differenceY-min_margin[0]
-        elif style.margin_align[1] == Tags.RIGHT:
-            margin_T, margin_B = differenceY-min_margin[2], min_margin[2]
+            margin_T = math.floor(differenceY/2)
+            margin_B = math.ceil(differenceY/2)
+        elif style.margin_align[1] == Tags.TOP:
+            margin_T = min_margin[0]
+            margin_B = differenceY-min_margin[0]
+        elif style.margin_align[1] == Tags.BOT:
+            margin_T = differenceY-min_margin[2]
+            margin_B = min_margin[2]
         
-        self.margin = (margin_T,
-                       margin_L,
-                       margin_B,
-                       margin_R)
+        self.margin = (margin_T,margin_L,
+                       margin_B,margin_R)
     
+
+    # child repositioning -------------------------------------------------- #
+
     def reposition_children_check(self):
-        """the function run which calls self.reposition_children()
-        but only if auto-reposition is enabled"""
+        """run self.reposition_children()
+        only if auto-reposition is enabled"""
         if self._auto_reposition_children:
             self.reposition_children()
     
