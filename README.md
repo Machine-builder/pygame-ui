@@ -14,7 +14,7 @@ Just download the repo, extract it, and run the test files! - Feel free to look 
 
 Here's what you _should_ see when you run `test_complex.py`, you can use the WASD keys to resize the Window Widget
 
-![a gif of test_complex.py in action](https://raw.githubusercontent.com/Machine-builder/pygame-ui/main/Gifs/test_complex.gif)
+![a gif of test_complex.py in action](https://raw.githubusercontent.com/Machine-builder/pygame-ui/main/src/gifs/test_complex.gif)
 
 ### Further Code Examples
 **A window with two stretching widgets, organised in a row**
