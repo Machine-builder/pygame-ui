@@ -1,3 +1,5 @@
+__version__ = '0.0.4'
+
 from .layout import Layout
 
 from .widget_types import WidgetTypes
